@@ -38,12 +38,21 @@ if user_input:
             messages=messages
         )
 
-        bot_message = response.choices[0].message.content
+        # Ensure we have a valid response
+        if response.choices and len(response.choices) > 0:
+            bot_message = response.choices[0].message.content
+        else:
+            bot_message = "Sorry, I couldn't generate a response. Please try again."
 
         # Save bot message
         st.session_state.messages.append({"role": "assistant", "content": bot_message})
+
+    except openai.error.RateLimitError:
+        st.session_state.messages.append({"role": "assistant", "content": "Quota exceeded. Please wait and try again later."})
+    except openai.error.AuthenticationError:
+        st.session_state.messages.append({"role": "assistant", "content": "Invalid API key. Please check your OpenAI key in Streamlit secrets."})
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.session_state.messages.append({"role": "assistant", "content": f"Error: {e}"})
 
 # -------------------------
 # Display chat history with simple styling
