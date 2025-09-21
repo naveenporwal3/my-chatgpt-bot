@@ -4,7 +4,6 @@ import openai
 # -------------------------
 # OpenAI API Key
 # -------------------------
-# Access key from Streamlit secrets (section: general)
 openai.api_key = st.secrets["general"]["OPENAI_API_KEY"]
 
 # -------------------------
@@ -23,36 +22,36 @@ if "messages" not in st.session_state:
 # -------------------------
 user_input = st.text_input("Type your message here:")
 
-if user_input:
+if user_input.strip():  # Ignore empty inputs
     # Save user message
     st.session_state.messages.append({"role": "user", "content": user_input})
 
-    # System prompt (optional branding / instructions)
+    # Prepare system prompt + conversation
     system_prompt = {"role": "system", "content": "You are a helpful assistant."}
     messages = [system_prompt] + st.session_state.messages
 
     try:
-        # Get response from OpenAI GPT
+        # Call OpenAI API
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=messages
         )
 
-        # Ensure we have a valid response
+        # Check if API returned a valid response
         if response.choices and len(response.choices) > 0:
             bot_message = response.choices[0].message.content
         else:
             bot_message = "Sorry, I couldn't generate a response. Please try again."
 
-        # Save bot message
-        st.session_state.messages.append({"role": "assistant", "content": bot_message})
-
     except openai.error.RateLimitError:
-        st.session_state.messages.append({"role": "assistant", "content": "Quota exceeded. Please wait and try again later."})
+        bot_message = "Quota exceeded. Please wait and try again later."
     except openai.error.AuthenticationError:
-        st.session_state.messages.append({"role": "assistant", "content": "Invalid API key. Please check your OpenAI key in Streamlit secrets."})
+        bot_message = "Invalid API key. Please check your OpenAI key in Streamlit secrets."
     except Exception as e:
-        st.session_state.messages.append({"role": "assistant", "content": f"Error: {e}"})
+        bot_message = f"Error: {e}"
+
+    # Save bot message
+    st.session_state.messages.append({"role": "assistant", "content": bot_message})
 
 # -------------------------
 # Display chat history with simple styling
